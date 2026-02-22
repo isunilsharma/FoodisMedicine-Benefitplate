@@ -152,19 +152,18 @@ class BenefitPlateAPITester:
         """Test eligibility evaluation"""
         print("\n🎯 Testing Eligibility Endpoints")
         
-        # Sample questionnaire answers
+        # Sample questionnaire answers (based on QuestionnaireAnswers model)
         eligibility_data = {
             "zip_code": "90001",
             "answers": {
-                "age_range": "18-59",
-                "income_band": "Under 150% FPL",
                 "enrolled_medicaid": "Yes",
                 "enrolled_snap": "No",
-                "household_size": "2",
-                "pregnancy_status": "No",
-                "disability_status": "No",
-                "chronic_conditions": [],
-                "housing_situation": "Stable"
+                "household_size": 2,
+                "income_band": "Under 100% FPL",
+                "age_range": "18-59",
+                "pregnancy": "No",
+                "health_conditions": ["diabetes"],
+                "has_case_manager": "No"
             }
         }
         
