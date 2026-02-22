@@ -464,6 +464,42 @@ async def admin_programs_needing_review(request: Request):
     
     return [Program(**p) for p in programs]
 
+@api_router.get("/admin/analytics")
+async def admin_get_analytics(request: Request, days: int = 30):
+    """Admin: Get analytics data"""
+    user = await get_current_user(request, db)
+    await require_admin(user)
+    
+    from datetime import timedelta
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
+    
+    # Get all events since cutoff
+    events = await db.analytics_events.find(
+        {"timestamp": {"$gte": cutoff_date}},
+        {"_id": 0}
+    ).to_list(10000)
+    
+    # Aggregate stats
+    stats = {
+        "total_events": len(events),
+        "zip_submitted": len([e for e in events if e["event_type"] == EVENT_ZIP_SUBMITTED]),
+        "questionnaire_completed": len([e for e in events if e["event_type"] == EVENT_QUESTIONNAIRE_COMPLETED]),
+        "programs_shown": len([e for e in events if e["event_type"] == EVENT_PROGRAMS_SHOWN]),
+        "program_detail_clicked": len([e for e in events if e["event_type"] == EVENT_PROGRAM_DETAIL_CLICKED]),
+        "result_saved": len([e for e in events if e["event_type"] == EVENT_RESULT_SAVED]),
+        "checklist_downloaded": len([e for e in events if e["event_type"] == EVENT_CHECKLIST_DOWNLOADED]),
+        "unique_users": len(set([e["user_id"] for e in events if e.get("user_id")])),
+        "events_by_type": {},
+        "recent_events": sorted(events, key=lambda x: x["timestamp"], reverse=True)[:50]
+    }
+    
+    # Count by event type
+    for event in events:
+        event_type = event["event_type"]
+        stats["events_by_type"][event_type] = stats["events_by_type"].get(event_type, 0) + 1
+    
+    return stats
+
 # Include the router in the main app
 app.include_router(api_router)
 
