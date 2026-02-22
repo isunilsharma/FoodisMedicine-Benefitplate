@@ -23,6 +23,11 @@ from eligibility_engine import evaluate_eligibility
 from seed_data import seed_programs
 from pdf_generator import generate_checklist_pdf
 from llm_explanations import generate_why_you_match_explanation
+from analytics import (
+    track_event, EVENT_ZIP_SUBMITTED, EVENT_QUESTIONNAIRE_STARTED,
+    EVENT_QUESTIONNAIRE_COMPLETED, EVENT_PROGRAMS_SHOWN, EVENT_PROGRAM_DETAIL_CLICKED,
+    EVENT_CHECKLIST_DOWNLOADED, EVENT_RESULT_SAVED, EVENT_PROGRAM_BROWSED
+)
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -115,6 +120,9 @@ async def lookup_zip_code(request: ZipLookupRequest):
     if not result:
         raise HTTPException(status_code=404, detail="ZIP code not found")
     
+    # Track analytics
+    await track_event(db, EVENT_ZIP_SUBMITTED, metadata={"zip_code": request.zip_code})
+    
     return ZipLookupResponse(**result)
 
 # ============== ELIGIBILITY ENDPOINTS ==============
@@ -127,6 +135,13 @@ async def evaluate_eligibility_endpoint(request: EligibilityRequest):
     if not geo_result:
         raise HTTPException(status_code=404, detail="ZIP code not found")
     
+    # Track analytics - questionnaire completed
+    await track_event(db, EVENT_QUESTIONNAIRE_COMPLETED, metadata={
+        "zip_code": request.zip_code,
+        "county": geo_result["county"],
+        "state": geo_result["state"]
+    })
+    
     # Evaluate eligibility
     results = await evaluate_eligibility(
         zip_code=request.zip_code,
@@ -136,6 +151,16 @@ async def evaluate_eligibility_endpoint(request: EligibilityRequest):
         answers=request.answers,
         db=db
     )
+    
+    # Track programs shown
+    total_programs = len(results["likely_eligible"]) + len(results["possibly_eligible"]) + len(results["community"])
+    await track_event(db, EVENT_PROGRAMS_SHOWN, metadata={
+        "zip_code": request.zip_code,
+        "total_programs": total_programs,
+        "likely_eligible": len(results["likely_eligible"]),
+        "possibly_eligible": len(results["possibly_eligible"]),
+        "community": len(results["community"])
+    })
     
     return EligibilityResponse(
         zip_code=request.zip_code,
@@ -180,6 +205,9 @@ async def get_program(program_id: str):
     if not program:
         raise HTTPException(status_code=404, detail="Program not found")
     
+    # Track analytics
+    await track_event(db, EVENT_PROGRAM_DETAIL_CLICKED, metadata={"program_id": program_id})
+    
     return Program(**program)
 
 @api_router.post("/programs/{program_id}/generate-explanation")
@@ -218,6 +246,12 @@ async def save_result(request: SaveResultRequest, http_request: Request):
     result_doc["created_at"] = result_doc["created_at"].isoformat()
     
     await db.user_saved_results.insert_one(result_doc)
+    
+    # Track analytics
+    await track_event(db, EVENT_RESULT_SAVED, user_id=user.user_id, metadata={
+        "zip_code": request.zip_code,
+        "programs_count": len(request.matched_program_ids)
+    })
     
     return saved_result
 
@@ -272,6 +306,12 @@ async def generate_pdf_checklist(
                 source_urls=program_doc.get("source_urls", [])
             )
             programs.append(program_match)
+    
+    # Track analytics
+    await track_event(db, EVENT_CHECKLIST_DOWNLOADED, user_id=user.user_id, metadata={
+        "zip_code": zip_code,
+        "programs_count": len(program_ids)
+    })
     
     # Generate PDF
     pdf_buffer = generate_checklist_pdf(
