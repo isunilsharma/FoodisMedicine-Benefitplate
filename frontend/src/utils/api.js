@@ -53,4 +53,5 @@ export const adminAPI = {
   updateProgram: (programId, data) => api.put(`/admin/programs/${programId}`, data),
   deleteProgram: (programId) => api.delete(`/admin/programs/${programId}`),
   programsNeedingReview: () => api.get('/admin/programs/needs-review'),
+  getAnalytics: (days = 30) => api.get('/admin/analytics', { params: { days } }),
 };
