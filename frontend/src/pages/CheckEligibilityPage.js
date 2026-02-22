@@ -76,6 +76,8 @@ const CheckEligibilityPage = () => {
   };
 
   const handleSubmit = async () => {
+    console.log('handleSubmit called', { zipLookupData, formData });
+    
     // Validate ZIP lookup happened
     if (!zipLookupData) {
       toast.error('Please complete ZIP code lookup first');
@@ -86,11 +88,20 @@ const CheckEligibilityPage = () => {
     if (!formData.enrolled_medicaid || !formData.enrolled_snap || !formData.income_band || 
         !formData.age_range || !formData.pregnancy || !formData.has_case_manager) {
       toast.error('Please answer all questions');
+      console.log('Missing fields:', {
+        medicaid: formData.enrolled_medicaid,
+        snap: formData.enrolled_snap,
+        income: formData.income_band,
+        age: formData.age_range,
+        pregnancy: formData.pregnancy,
+        case_manager: formData.has_case_manager
+      });
       return;
     }
 
     setLoading(true);
     try {
+      console.log('Calling eligibility API...');
       const response = await eligibilityAPI.evaluate(formData.zip_code, {
         enrolled_medicaid: formData.enrolled_medicaid,
         enrolled_snap: formData.enrolled_snap,
@@ -102,6 +113,8 @@ const CheckEligibilityPage = () => {
         has_case_manager: formData.has_case_manager,
       });
 
+      console.log('Eligibility response:', response.data);
+      
       // Navigate to results with data
       navigate('/results', { state: { results: response.data, formData, zipLookupData } });
     } catch (error) {
