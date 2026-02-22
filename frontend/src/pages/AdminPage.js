@@ -18,7 +18,9 @@ const STATUSES = ['active', 'paused', 'deprecated'];
 
 const AdminPage = () => {
   const [programs, setPrograms] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [editingProgram, setEditingProgram] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -41,6 +43,7 @@ const AdminPage = () => {
 
   useEffect(() => {
     loadPrograms();
+    loadAnalytics();
   }, []);
 
   const loadPrograms = async () => {
@@ -53,6 +56,18 @@ const AdminPage = () => {
       toast.error('Failed to load programs');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAnalytics = async () => {
+    setAnalyticsLoading(true);
+    try {
+      const response = await adminAPI.getAnalytics(30);
+      setAnalytics(response.data);
+    } catch (error) {
+      console.error('Failed to load analytics:', error);
+    } finally {
+      setAnalyticsLoading(false);
     }
   };
 
@@ -166,7 +181,7 @@ const AdminPage = () => {
             <h1 className="text-3xl font-bold text-gray-900 mb-2" data-testid="admin-page">
               Admin Console
             </h1>
-            <p className="text-gray-600">Manage programs and eligibility rules</p>
+            <p className="text-gray-600">Manage programs and view analytics</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -363,57 +378,160 @@ const AdminPage = () => {
             <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
           </div>
         ) : (
-          <div className="space-y-4">
-            {programs.map(program => (
-              <Card key={program.program_id}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-xl mb-2">{program.program_name}</CardTitle>
-                      <div className="flex flex-wrap gap-2">
-                        <Badge variant="secondary">{program.benefit_type}</Badge>
-                        <Badge variant="outline">{program.geo_scope}</Badge>
-                        {program.state && <Badge variant="outline">{program.state}</Badge>}
-                        <Badge variant={program.status === 'active' ? 'default' : 'secondary'}>
-                          {program.status}
-                        </Badge>
+          <Tabs defaultValue="programs" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="programs">Programs ({programs.length})</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="programs" className="space-y-4">
+              {programs.map(program => (
+                <Card key={program.program_id}>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className="text-xl mb-2">{program.program_name}</CardTitle>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="secondary">{program.benefit_type}</Badge>
+                          <Badge variant="outline">{program.geo_scope}</Badge>
+                          {program.state && <Badge variant="outline">{program.state}</Badge>}
+                          <Badge variant={program.status === 'active' ? 'default' : 'secondary'}>
+                            {program.status}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenDialog(program)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteProgram(program.program_id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-600" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenDialog(program)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteProgram(program.program_id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-600" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-600">
-                    Last verified: {new Date(program.last_verified_at).toLocaleDateString()}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-600">
+                      Last verified: {new Date(program.last_verified_at).toLocaleDateString()}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
 
-            {programs.length === 0 && (
-              <Card>
-                <CardContent className="py-12 text-center text-gray-600">
-                  <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p>No programs found. Create your first program to get started.</p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+              {programs.length === 0 && (
+                <Card>
+                  <CardContent className="py-12 text-center text-gray-600">
+                    <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <p>No programs found. Create your first program to get started.</p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="analytics">
+              {analyticsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                </div>
+              ) : analytics ? (
+                <div className="space-y-4">
+                  {/* Analytics Summary Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <p className="text-sm text-gray-600">Total Events</p>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-3xl font-bold">{analytics.total_events}</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <p className="text-sm text-gray-600">ZIP Searches</p>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-3xl font-bold">{analytics.zip_submitted}</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <p className="text-sm text-gray-600">Completed</p>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-3xl font-bold">{analytics.questionnaire_completed}</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <p className="text-sm text-gray-600">Saved Results</p>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-3xl font-bold">{analytics.result_saved}</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Event Breakdown */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Event Breakdown (Last 30 Days)</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Programs Shown</span>
+                          <Badge>{analytics.programs_shown}</Badge>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Program Details Clicked</span>
+                          <Badge>{analytics.program_detail_clicked}</Badge>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Checklists Downloaded</span>
+                          <Badge>{analytics.checklist_downloaded}</Badge>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Unique Users</span>
+                          <Badge>{analytics.unique_users}</Badge>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Recent Events */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Recent Activity</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2 max-h-96 overflow-y-auto">
+                        {analytics.recent_events.map((event, idx) => (
+                          <div key={idx} className="flex justify-between items-center text-sm border-b pb-2">
+                            <span className="font-medium">{event.event_type.replace(/_/g, ' ')}</span>
+                            <span className="text-gray-500">{new Date(event.timestamp).toLocaleString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="py-12 text-center text-gray-600">
+                    <p>No analytics data available</p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          </Tabs>
         )}
       </div>
     </div>
