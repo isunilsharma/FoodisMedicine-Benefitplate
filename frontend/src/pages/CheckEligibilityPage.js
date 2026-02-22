@@ -220,15 +220,21 @@ const CheckEligibilityPage = () => {
         return (
           <div className="space-y-4">
             <Label htmlFor="household_size" className="text-lg">How many people are in your household?</Label>
-            <Input
-              id="household_size"
-              type="number"
-              min={1}
-              max={15}
-              value={formData.household_size}
-              onChange={(e) => updateFormData('household_size', parseInt(e.target.value))}
-              className="text-lg"
-            />
+            <Select
+              value={formData.household_size.toString()}
+              onValueChange={(v) => updateFormData('household_size', parseInt(v))}
+            >
+              <SelectTrigger className="text-lg">
+                <SelectValue placeholder="Select household size" />
+              </SelectTrigger>
+              <SelectContent>
+                {[...Array(20)].map((_, i) => (
+                  <SelectItem key={i + 1} value={(i + 1).toString()}>
+                    {i + 1} {i === 0 ? 'person' : 'people'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         );
 
