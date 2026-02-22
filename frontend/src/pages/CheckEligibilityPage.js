@@ -76,6 +76,12 @@ const CheckEligibilityPage = () => {
   };
 
   const handleSubmit = async () => {
+    // Validate ZIP lookup happened
+    if (!zipLookupData) {
+      toast.error('Please complete ZIP code lookup first');
+      return;
+    }
+
     // Validate required fields
     if (!formData.enrolled_medicaid || !formData.enrolled_snap || !formData.income_band || 
         !formData.age_range || !formData.pregnancy || !formData.has_case_manager) {
@@ -97,10 +103,10 @@ const CheckEligibilityPage = () => {
       });
 
       // Navigate to results with data
-      navigate('/results', { state: { results: response.data, formData } });
+      navigate('/results', { state: { results: response.data, formData, zipLookupData } });
     } catch (error) {
       console.error('Evaluation error:', error);
-      toast.error('Failed to evaluate eligibility. Please try again.');
+      toast.error(`Failed to evaluate eligibility: ${error.response?.data?.detail || error.message}`);
     } finally {
       setLoading(false);
     }
