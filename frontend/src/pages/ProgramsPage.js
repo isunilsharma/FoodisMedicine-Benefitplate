@@ -29,6 +29,7 @@ const ProgramsPage = () => {
 
   useEffect(() => {
     loadPrograms();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [benefitTypeFilter, stateFilter]);
 
   const loadPrograms = async () => {

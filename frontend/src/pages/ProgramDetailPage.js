@@ -15,6 +15,7 @@ const ProgramDetailPage = () => {
 
   useEffect(() => {
     loadProgram();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [programId]);
 
   const loadProgram = async () => {
