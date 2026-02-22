@@ -473,30 +473,63 @@ async def admin_get_analytics(request: Request, days: int = 30):
     from datetime import timedelta
     cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
     
-    # Get all events since cutoff
-    events = await db.analytics_events.find(
-        {"timestamp": {"$gte": cutoff_date}},
-        {"_id": 0}
-    ).to_list(10000)
+    # OPTIMIZATION: Use aggregation pipeline for stats instead of loading all events
+    pipeline = [
+        {"$match": {"timestamp": {"$gte": cutoff_date}}},
+        {"$facet": {
+            "total_count": [{"$count": "count"}],
+            "by_type": [
+                {"$group": {"_id": "$event_type", "count": {"$sum": 1}}}
+            ],
+            "unique_users": [
+                {"$match": {"user_id": {"$exists": True, "$ne": None}}},
+                {"$group": {"_id": "$user_id"}},
+                {"$count": "count"}
+            ],
+            "recent_events": [
+                {"$sort": {"timestamp": -1}},
+                {"$limit": 50},
+                {"$project": {"_id": 0, "event_type": 1, "timestamp": 1, "metadata": 1, "user_id": 1}}
+            ]
+        }}
+    ]
     
-    # Aggregate stats
+    result = await db.analytics_events.aggregate(pipeline).to_list(1)
+    
+    if not result:
+        return {
+            "total_events": 0,
+            "zip_submitted": 0,
+            "questionnaire_completed": 0,
+            "programs_shown": 0,
+            "program_detail_clicked": 0,
+            "result_saved": 0,
+            "checklist_downloaded": 0,
+            "unique_users": 0,
+            "events_by_type": {},
+            "recent_events": []
+        }
+    
+    data = result[0]
+    
+    # Parse results
+    total_events = data["total_count"][0]["count"] if data["total_count"] else 0
+    unique_users = data["unique_users"][0]["count"] if data["unique_users"] else 0
+    
+    events_by_type = {item["_id"]: item["count"] for item in data["by_type"]}
+    
     stats = {
-        "total_events": len(events),
-        "zip_submitted": len([e for e in events if e["event_type"] == EVENT_ZIP_SUBMITTED]),
-        "questionnaire_completed": len([e for e in events if e["event_type"] == EVENT_QUESTIONNAIRE_COMPLETED]),
-        "programs_shown": len([e for e in events if e["event_type"] == EVENT_PROGRAMS_SHOWN]),
-        "program_detail_clicked": len([e for e in events if e["event_type"] == EVENT_PROGRAM_DETAIL_CLICKED]),
-        "result_saved": len([e for e in events if e["event_type"] == EVENT_RESULT_SAVED]),
-        "checklist_downloaded": len([e for e in events if e["event_type"] == EVENT_CHECKLIST_DOWNLOADED]),
-        "unique_users": len(set([e["user_id"] for e in events if e.get("user_id")])),
-        "events_by_type": {},
-        "recent_events": sorted(events, key=lambda x: x["timestamp"], reverse=True)[:50]
+        "total_events": total_events,
+        "zip_submitted": events_by_type.get("zip_submitted", 0),
+        "questionnaire_completed": events_by_type.get("questionnaire_completed", 0),
+        "programs_shown": events_by_type.get("programs_shown", 0),
+        "program_detail_clicked": events_by_type.get("program_detail_clicked", 0),
+        "result_saved": events_by_type.get("result_saved", 0),
+        "checklist_downloaded": events_by_type.get("checklist_downloaded", 0),
+        "unique_users": unique_users,
+        "events_by_type": events_by_type,
+        "recent_events": data["recent_events"]
     }
-    
-    # Count by event type
-    for event in events:
-        event_type = event["event_type"]
-        stats["events_by_type"][event_type] = stats["events_by_type"].get(event_type, 0) + 1
     
     return stats
 
