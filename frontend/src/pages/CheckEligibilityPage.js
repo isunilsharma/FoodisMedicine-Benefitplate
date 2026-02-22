@@ -241,27 +241,28 @@ const CheckEligibilityPage = () => {
       case 4:
         return (
           <div className="space-y-4">
-            <Label className="text-lg">What is your household income range? (Compared to Federal Poverty Level)</Label>
+            <Label className="text-lg">What is your household income range?</Label>
+            <p className="text-sm text-gray-600">Annual household income before taxes</p>
             <RadioGroup value={formData.income_band} onValueChange={(v) => updateFormData('income_band', v)}>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="Under 100% FPL" id="income-1" />
-                <Label htmlFor="income-1">Under 100% FPL</Label>
+                <Label htmlFor="income-1">Under $25,000</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="100-138% FPL" id="income-2" />
-                <Label htmlFor="income-2">100-138% FPL</Label>
+                <Label htmlFor="income-2">$25,000 - $40,000</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="139-200% FPL" id="income-3" />
-                <Label htmlFor="income-3">139-200% FPL</Label>
+                <Label htmlFor="income-3">$40,001 - $55,000</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="201-300% FPL" id="income-4" />
-                <Label htmlFor="income-4">201-300% FPL</Label>
+                <Label htmlFor="income-4">$55,001 - $80,000</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="Over 300% FPL" id="income-5" />
-                <Label htmlFor="income-5">Over 300% FPL</Label>
+                <Label htmlFor="income-5">Over $80,000</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="Not sure" id="income-unsure" />
