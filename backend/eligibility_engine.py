@@ -107,6 +107,14 @@ async def evaluate_eligibility(
     
     programs = await db.programs.find(geo_filter, {"_id": 0}).to_list(1000)
     
+    # OPTIMIZATION: Batch fetch all program rules at once (avoid N+1 queries)
+    program_ids = [p["program_id"] for p in programs]
+    rules_cursor = await db.program_rules.find(
+        {"program_id": {"$in": program_ids}},
+        {"_id": 0}
+    ).to_list(1000)
+    rules_by_id = {r["program_id"]: r for r in rules_cursor}
+    
     likely_eligible = []
     possibly_eligible = []
     community = []
@@ -114,11 +122,8 @@ async def evaluate_eligibility(
     for program_doc in programs:
         program = Program(**program_doc)
         
-        # Get program rules
-        rule_doc = await db.program_rules.find_one(
-            {"program_id": program.program_id},
-            {"_id": 0}
-        )
+        # Get program rules from pre-fetched dict
+        rule_doc = rules_by_id.get(program.program_id)
         
         if not rule_doc:
             # No rules = community program
