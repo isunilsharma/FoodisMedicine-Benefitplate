@@ -54,6 +54,17 @@ const CheckEligibilityPage = () => {
       try {
         const response = await geographyAPI.lookupZip(formData.zip_code);
         setZipLookupData(response.data);
+        
+        // Check if California
+        if (response.data.state_code !== 'CA') {
+          toast.error(
+            'Our service is currently available in California only. We\'re working to expand coverage to your area.',
+            { duration: 6000 }
+          );
+          setLoading(false);
+          return; // Block progression to next step
+        }
+        
         toast.success(`Found: ${response.data.county}, ${response.data.state}`);
         setStep(step + 1);
       } catch (error) {
