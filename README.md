@@ -494,14 +494,21 @@ RUN yarn build
 
 ---
 
-## License
 
-This project is open source and available under the [MIT License](LICENSE).
-
----
 
 ## Acknowledgments
 
 - ZIP code data sourced from the [HUD USPS ZIP-County Crosswalk](https://www.huduser.gov/portal/datasets/usps_crosswalk.html)
 - UI components built with [Shadcn/UI](https://ui.shadcn.com/)
 - Program data compiled from California state health and nutrition program directories
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+<p align="center">
+  BenefitPlate is an open-source eligibility navigator
+</p>
+
