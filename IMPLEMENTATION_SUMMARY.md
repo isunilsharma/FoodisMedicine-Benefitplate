@@ -126,8 +126,8 @@ curl http://localhost:8001/api/programs
 5. **Admin restricted** - Only sunilbg100@gmail.com
 
 ## URLs
-- Frontend: https://healthrx-creator.preview.emergentagent.com
-- Backend: https://healthrx-creator.preview.emergentagent.com/api
+- Frontend: https://program-matcher-test.preview.emergentagent.com
+- Backend: https://program-matcher-test.preview.emergentagent.com/api
 
 ## Next Steps
 1. Test full user flow (questionnaire → results → save → download)

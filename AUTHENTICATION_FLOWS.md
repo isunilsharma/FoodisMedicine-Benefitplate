@@ -12,7 +12,7 @@
 **Step 1:** User clicks "Sign In" button
 - Triggers: `AuthContext.login()` function
 - Redirects to: `https://auth.emergentagent.com/?redirect={origin}/dashboard`
-- Example: `https://auth.emergentagent.com/?redirect=https://healthrx-creator.preview.emergentagent.com/dashboard`
+- Example: `https://auth.emergentagent.com/?redirect=https://program-matcher-test.preview.emergentagent.com/dashboard`
 
 **Step 2:** Google OAuth Screen
 - User sees: "LOG IN TO Benefitplate"
@@ -21,7 +21,7 @@
 
 **Step 3:** Redirect Back with Session ID
 - Redirected to: `{origin}/dashboard#session_id=XXXXX`
-- Example: `https://healthrx-creator.preview.emergentagent.com/dashboard#session_id=abc123`
+- Example: `https://program-matcher-test.preview.emergentagent.com/dashboard#session_id=abc123`
 
 **Step 4:** Session Exchange (AuthCallback)
 - AuthCallback component detects `session_id` in URL hash

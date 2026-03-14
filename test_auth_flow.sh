@@ -16,7 +16,7 @@ echo ""
 
 # Test 3: Simulate session exchange (you'll need a real session_id from auth)
 echo "3. To test full flow manually:"
-echo "   a. Open browser to: https://healthrx-creator.preview.emergentagent.com"
+echo "   a. Open browser to: https://program-matcher-test.preview.emergentagent.com"
 echo "   b. Click 'Sign In' button"
 echo "   c. Login with Google (sunilbg100@gmail.com)"
 echo "   d. Check browser console for logs"

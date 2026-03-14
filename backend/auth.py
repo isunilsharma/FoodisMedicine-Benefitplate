@@ -8,17 +8,15 @@ from typing import Optional
 
 from models import User, UserSession
 
-# REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-
-EMERGENT_AUTH_URL = "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data"
+AUTH_SERVICE_URL = os.environ.get('AUTH_SERVICE_URL')
 ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'sunilbg100@gmail.com')
 
 async def exchange_session_id(session_id: str, db) -> dict:
-    """Exchange session_id for user data and session_token from Emergent Auth"""
+    """Exchange session_id for user data and session_token from OAuth provider"""
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(
-                EMERGENT_AUTH_URL,
+                AUTH_SERVICE_URL,
                 headers={"X-Session-ID": session_id},
                 timeout=10.0
             )
